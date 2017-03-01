@@ -265,7 +265,7 @@ def oauth_authorize():
         existing_token = AuthToken.query.filter_by(user=g.user, client=client).first()
     else:
         existing_token = AuthToken.query.filter_by(user_session=g.usersession, client=client).first()
-    if existing_token and set(scope).issubset(set(existing_token.scope)):
+    if existing_token and set(scope).issubset(set(existing_token.effective_scope)):
         if response_type == 'code':
             return oauth_auth_success(client, redirect_uri, state, oauth_make_auth_code(client, scope, redirect_uri))
         else:
@@ -336,7 +336,7 @@ def oauth_make_token(user, client, scope, user_session=None):
 def oauth_token_success(token, **params):
     params['access_token'] = token.token
     params['token_type'] = token.token_type
-    params['scope'] = u' '.join(token.scope)
+    params['scope'] = u' '.join(token.effective_scope)
     if token.client.trusted:
         # Trusted client. Send back waiting user messages.
         for ufm in list(UserFlashMessage.query.filter_by(user=token.user).all()):
@@ -431,7 +431,7 @@ def oauth_token():
         token = oauth_make_token(user=authcode.user, client=client, scope=scope)
         db.session.delete(authcode)
         return oauth_token_success(token, userinfo=get_userinfo(
-            user=authcode.user, client=client, scope=token.scope, session=authcode.session))
+            user=authcode.user, client=client, scope=token.effective_scope, session=authcode.session))
 
     elif grant_type == 'password':
         # Validations 4.1: password grant_type is only for trusted clients
