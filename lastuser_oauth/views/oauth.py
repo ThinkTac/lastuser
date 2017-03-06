@@ -401,8 +401,10 @@ def oauth_token():
                 user = User.get(userid=userid)
                 if user:
                     token = oauth_make_token(user=user, client=client, scope=[])
-                    return oauth_token_success(token, userinfo=get_userinfo(
-                        user=token.user, client=client, scope=token.effective_scope))
+                    return oauth_token_success(
+                        token,
+                        userinfo=get_userinfo(
+                            user=token.user, client=client, scope=token.effective_scope))
                 else:
                     return oauth_token_error('invalid_grant', _("Unknown user"))
             else:
