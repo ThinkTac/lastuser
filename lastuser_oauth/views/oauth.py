@@ -312,6 +312,7 @@ def oauth_token_error(error, error_description=None, error_uri=None):
 
 
 def oauth_make_token(user, client, scope, user_session=None):
+    # Look for an existing token
     if client.confidential:
         token = AuthToken.query.filter_by(user=user, client=client).first()
     elif user_session:
@@ -319,9 +320,11 @@ def oauth_make_token(user, client, scope, user_session=None):
     else:
         raise ValueError("user_session not provided")
 
+    # If token exists, add to the existing scope
     if token:
         token.add_scope(scope)
     else:
+        # If there's no existing token, create one
         if client.confidential:
             token = AuthToken(user=user, client=client, scope=scope, token_type='bearer')
             token = failsafe_add(db.session, token, user=user, client=client)
@@ -397,9 +400,9 @@ def oauth_token():
             if client.trusted:
                 user = User.get(userid=userid)
                 if user:
-                    token = oauth_make_token(user=user, client=client, scope=client.scope)
+                    token = oauth_make_token(user=user, client=client, scope=[])
                     return oauth_token_success(token, userinfo=get_userinfo(
-                        user=token.user, client=client, scope=token.scope))
+                        user=token.user, client=client, scope=token.effective_scope))
                 else:
                     return oauth_token_error('invalid_grant', _("Unknown user"))
             else:
