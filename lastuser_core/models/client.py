@@ -397,7 +397,7 @@ class AuthToken(ScopeMixin, BaseMixin, db.Model):
 
     @property
     def effective_scope(self):
-        return tuple(set(self.scope) | set(self.client.scope))
+        return sorted(set(self.scope) | set(self.client.scope))
 
     def refresh(self):
         """
